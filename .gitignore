@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Flask
+instance/
+.webassets-cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific - don't push these
+node_modules/
+*.xlsx
+*.png
+*.html
+*.js
+analyze_sentiment.py
+completion_ring.py
+learning_performance_corr.py
+learning_performance_trend.py
+tes_html_plotly.py
+temp_patch.txt
+package.json
+package-lock.json
+Hugging Face/
