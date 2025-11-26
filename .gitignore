@@ -27,7 +27,12 @@ Thumbs.db
 node_modules/
 *.xlsx
 *.png
-*.html
+# Block specific HTML files but allow templates/
+cyberpunk_matrix.html
+heictojpg.html
+interactive_correlation_matrix.html
+performance_learning_dashboard.html
+performance_trend_per_iteration.html
 *.js
 analyze_sentiment.py
 completion_ring.py
