@@ -1,59 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Completion Ratio Donut Chart</title>
+    <title>Completion Ratio Chart Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
     <div class="container">
-        <h1>Completion Ratio Donut Chart</h1>
-
+        <h1>Completion Ratio Chart Generator</h1>
+        
         <div class="chart-container">
-            <div class="donut-chart" id="donutChart" style="
-                width: 400px;
-                height: 400px;
-                border-radius: 50%;
-                background: conic-gradient(
-                    {{ data.completed_color }} 0deg {{ data.completed_degrees }}deg,
-                    {{ data.incomplete_color }} {{ data.completed_degrees }}deg 360deg
-                );
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                position: relative;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            ">
-                <div class="donut-hole" style="
-                    width: 220px;
-                    height: 220px;
+            <!-- Chart Type Selector -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <label for="chart_type_selector" style="font-weight: 600; margin-right: 10px;">Chart Type:</label>
+                <select id="chart_type_selector" style="
+                    padding: 8px 16px;
+                    font-size: 16px;
+                    border-radius: 6px;
+                    border: 2px solid #667eea;
                     background: white;
+                    cursor: pointer;
+                ">
+                    <option value="donut" {{ 'selected' if data.chart_type == 'donut' else '' }}>Donut Chart</option>
+                    <option value="battery" {{ 'selected' if data.chart_type == 'battery' else '' }}>Battery Chart</option>
+                </select>
+            </div>
+
+            <!-- Donut Chart -->
+            <div id="donut-container" class="chart-display" style="{{ 'display: block;' if data.chart_type == 'donut' else 'display: none;' }}">
+                <div class="donut-chart" id="donutChart" style="
+                    width: 400px;
+                    height: 400px;
                     border-radius: 50%;
+                    background: conic-gradient(
+                        {{ data.completed_color }} 0deg {{ data.completed_degrees }}deg,
+                        {{ data.incomplete_color }} {{ data.completed_degrees }}deg 360deg
+                    );
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    position: absolute;
+                    position: relative;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    margin: 0 auto;
                 ">
-                    <div class="donut-text" id="donutText" style="
-                        font-size: 48px;
+                    <div class="donut-hole" style="
+                        width: 220px;
+                        height: 220px;
+                        background: transparent;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        position: absolute;
+                    ">
+                        <div class="donut-text" id="donutText" style="
+                            font-size: 48px;
+                            font-weight: 700;
+                            color: {{ data.text_color }};
+                            font-family: 'Inter', sans-serif;
+                        ">
+                            {{ "%.2f"|format(data.current) }}/{{ "%.0f"|format(data.max) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Battery Chart -->
+            <div id="battery-container" class="chart-display" style="{{ 'display: block;' if data.chart_type == 'battery' else 'display: none;' }}">
+                <div class="battery-chart" id="batteryChart" style="
+                    width: 400px;
+                    height: 100px;
+                    border-radius: 12px;
+                    background: linear-gradient(
+                        to right,
+                        {{ data.completed_color }} 0%,
+                        {{ data.completed_color }} {{ data.percentage }}%,
+                        {{ data.incomplete_color }} {{ data.percentage }}%,
+                        {{ data.incomplete_color }} 100%
+                    );
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    position: relative;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    margin: 0 auto;
+                    border: 3px solid #333;
+                ">
+                    <div class="battery-text" id="batteryText" style="
+                        font-size: 36px;
                         font-weight: 700;
                         color: {{ data.text_color }};
                         font-family: 'Inter', sans-serif;
+                        text-shadow: 0 0 4px rgba(255,255,255,0.8), 0 0 8px rgba(255,255,255,0.6);
                     ">
                         {{ "%.2f"|format(data.current) }}/{{ "%.0f"|format(data.max) }}
                     </div>
                 </div>
             </div>
-
+            
             <div class="stats">
                 <p><strong>Completion:</strong> {{ "%.1f"|format(data.percentage) }}%</p>
                 <p><strong>Completed:</strong> {{ "%.2f"|format(data.current) }}</p>
                 <p><strong>Remaining:</strong> {{ "%.2f"|format(data.max - data.current) }}</p>
             </div>
-
+            
             <div style="text-align: center; margin-top: 20px;">
                 <button onclick="downloadChart()" style="
                     padding: 12px 24px;
@@ -68,69 +119,101 @@
                 ">📥 Download as PNG (Transparent)</button>
             </div>
         </div>
-
+        
         <div class="controls">
             <h2>Update Values</h2>
             <form method="POST" action="/update">
+                <input type="hidden" id="chart_type" name="chart_type" value="{{ data.chart_type }}">
+                
                 <div class="form-group">
                     <label for="current">Current Value (Completed):</label>
-                    <input type="number" id="current" name="current" value="{{ data.current }}" step="0.01" min="0"
-                        max="{{ data.max }}" required>
+                    <input type="number" id="current" name="current" 
+                           value="{{ data.current }}" step="0.01" min="0" max="{{ data.max }}" required>
                 </div>
-
+                
                 <div class="form-group">
                     <label for="max">Maximum Value:</label>
-                    <input type="number" id="max" name="max" value="{{ data.max }}" step="0.01" min="0.01" required>
+                    <input type="number" id="max" name="max" 
+                           value="{{ data.max }}" step="0.01" min="0.01" required>
                 </div>
-
+                
                 <div class="form-group">
                     <label for="completed_color">Completed Color:</label>
-                    <input type="color" id="completed_color" name="completed_color" value="{{ data.completed_color }}">
+                    <input type="color" id="completed_color" name="completed_color" 
+                           value="{{ data.completed_color }}">
                     <input type="text" class="color-text" value="{{ data.completed_color }}" readonly>
                 </div>
-
+                
                 <div class="form-group">
                     <label for="incomplete_color">Incomplete Color (Remaining):</label>
-                    <input type="color" id="incomplete_color" name="incomplete_color"
-                        value="{{ data.incomplete_color }}">
+                    <input type="color" id="incomplete_color" name="incomplete_color" 
+                           value="{{ data.incomplete_color }}">
                     <input type="text" class="color-text" value="{{ data.incomplete_color }}" readonly>
                 </div>
-
+                
                 <div class="form-group">
                     <label for="text_color">Text Color (Center Numbers):</label>
-                    <input type="color" id="text_color" name="text_color" value="{{ data.text_color }}">
+                    <input type="color" id="text_color" name="text_color" 
+                           value="{{ data.text_color }}">
                     <input type="text" class="color-text" value="{{ data.text_color }}" readonly>
                 </div>
-
+                
                 <button type="submit">Update Chart</button>
             </form>
         </div>
     </div>
-
+    
     <script>
         // Chart data from server
         var chartData = {
             current: parseFloat('{{ data.current }}'),
             max: parseFloat('{{ data.max }}'),
+            percentage: parseFloat('{{ data.percentage }}'),
             completedDegrees: parseFloat('{{ data.completed_degrees }}'),
             completedColor: '{{ data.completed_color }}',
             incompleteColor: '{{ data.incomplete_color }}',
-            textColor: '{{ data.text_color }}'
+            textColor: '{{ data.text_color }}',
+            chartType: '{{ data.chart_type }}'
         };
-
+        
+        // Chart type selector change handler
+        document.getElementById('chart_type_selector').addEventListener('change', function(e) {
+            var selectedType = e.target.value;
+            document.getElementById('chart_type').value = selectedType;
+            
+            // Show/hide charts
+            if (selectedType === 'donut') {
+                document.getElementById('donut-container').style.display = 'block';
+                document.getElementById('battery-container').style.display = 'none';
+            } else {
+                document.getElementById('donut-container').style.display = 'none';
+                document.getElementById('battery-container').style.display = 'block';
+            }
+            
+            chartData.chartType = selectedType;
+        });
+        
         // Download chart as transparent PNG
         function downloadChart() {
+            if (chartData.chartType === 'donut') {
+                downloadDonutChart();
+            } else {
+                downloadBatteryChart();
+            }
+        }
+        
+        function downloadDonutChart() {
             var canvas = document.createElement('canvas');
             var ctx = canvas.getContext('2d');
             var size = 400;
             canvas.width = size;
             canvas.height = size;
-
+            
             var centerX = size / 2;
             var centerY = size / 2;
             var outerRadius = 150;
             var innerRadius = 110;
-
+            
             // Draw completed portion
             ctx.beginPath();
             ctx.arc(centerX, centerY, outerRadius, -Math.PI / 2, (-Math.PI / 2) + (chartData.completedDegrees * Math.PI / 180));
@@ -138,7 +221,7 @@
             ctx.closePath();
             ctx.fillStyle = chartData.completedColor;
             ctx.fill();
-
+            
             // Draw incomplete portion
             ctx.beginPath();
             ctx.arc(centerX, centerY, outerRadius, (-Math.PI / 2) + (chartData.completedDegrees * Math.PI / 180), (-Math.PI / 2) + (2 * Math.PI));
@@ -146,7 +229,7 @@
             ctx.closePath();
             ctx.fillStyle = chartData.incompleteColor;
             ctx.fill();
-
+            
             // Draw text
             ctx.fillStyle = chartData.textColor;
             ctx.font = 'bold 48px Inter, sans-serif';
@@ -154,9 +237,9 @@
             ctx.textBaseline = 'middle';
             var text = chartData.current.toFixed(2) + '/' + chartData.max.toFixed(0);
             ctx.fillText(text, centerX, centerY);
-
+            
             // Download
-            canvas.toBlob(function (blob) {
+            canvas.toBlob(function(blob) {
                 var url = URL.createObjectURL(blob);
                 var link = document.createElement('a');
                 link.download = 'donut-chart-' + chartData.current.toFixed(2) + '-' + chartData.max.toFixed(0) + '.png';
@@ -165,20 +248,76 @@
                 URL.revokeObjectURL(url);
             });
         }
-
+        
+        function downloadBatteryChart() {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            var width = 400;
+            var height = 100;
+            canvas.width = width;
+            canvas.height = height;
+            
+            var borderRadius = 12;
+            var borderWidth = 3;
+            
+            // Draw border
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = borderWidth;
+            ctx.beginPath();
+            ctx.roundRect(borderWidth/2, borderWidth/2, width - borderWidth, height - borderWidth, borderRadius);
+            ctx.stroke();
+            
+            // Calculate fill width
+            var fillWidth = (width - borderWidth * 2) * (chartData.percentage / 100);
+            
+            // Draw completed portion
+            ctx.fillStyle = chartData.completedColor;
+            ctx.beginPath();
+            ctx.roundRect(borderWidth, borderWidth, fillWidth, height - borderWidth * 2, borderRadius);
+            ctx.fill();
+            
+            // Draw incomplete portion
+            if (chartData.percentage < 100) {
+                ctx.fillStyle = chartData.incompleteColor;
+                ctx.fillRect(borderWidth + fillWidth, borderWidth, width - borderWidth * 2 - fillWidth, height - borderWidth * 2);
+            }
+            
+            // Draw text
+            ctx.fillStyle = chartData.textColor;
+            ctx.font = 'bold 36px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            var text = chartData.current.toFixed(2) + '/' + chartData.max.toFixed(0);
+            
+            // Add text shadow for better visibility
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+            ctx.shadowBlur = 4;
+            ctx.fillText(text, width / 2, height / 2);
+            ctx.shadowBlur = 0;
+            
+            // Download
+            canvas.toBlob(function(blob) {
+                var url = URL.createObjectURL(blob);
+                var link = document.createElement('a');
+                link.download = 'battery-chart-' + chartData.current.toFixed(2) + '-' + chartData.max.toFixed(0) + '.png';
+                link.href = url;
+                link.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+        
         // Update color text inputs when color pickers change
-        document.getElementById('completed_color').addEventListener('input', function (e) {
+        document.getElementById('completed_color').addEventListener('input', function(e) {
             this.nextElementSibling.value = e.target.value.toUpperCase();
         });
-
-        document.getElementById('incomplete_color').addEventListener('input', function (e) {
+        
+        document.getElementById('incomplete_color').addEventListener('input', function(e) {
             this.nextElementSibling.value = e.target.value.toUpperCase();
         });
-
-        document.getElementById('text_color').addEventListener('input', function (e) {
+        
+        document.getElementById('text_color').addEventListener('input', function(e) {
             this.nextElementSibling.value = e.target.value.toUpperCase();
         });
     </script>
 </body>
-
 </html>
