@@ -96,7 +96,8 @@ label {
 }
 
 input[type="number"],
-input[type="text"] {
+input[type="text"],
+select {
     width: 100%;
     padding: 12px 16px;
     border: 2px solid #e2e8f0;
@@ -107,7 +108,8 @@ input[type="text"] {
 }
 
 input[type="number"]:focus,
-input[type="text"]:focus {
+input[type="text"]:focus,
+select:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -127,6 +129,12 @@ input[type="color"] {
     display: inline-block;
     background: #fff;
     font-family: 'Courier New', monospace;
+}
+
+.color-inline {
+    display: flex;
+    gap: 12px;
+    align-items: center;
 }
 
 button {
@@ -150,6 +158,95 @@ button:hover {
 
 button:active {
     transform: translateY(0);
+}
+
+.pill-button {
+    width: auto;
+    min-width: 64px;
+    padding: 10px 12px;
+    font-size: 14px;
+    box-shadow: none;
+    background: #edf2ff;
+    color: #4c51bf;
+    border: 1px solid #c3d1ff;
+}
+
+.pill-button:hover {
+    box-shadow: none;
+    transform: translateY(0);
+    background: #dbe4ff;
+}
+
+.decimal-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.decimal-display {
+    min-width: 28px;
+    text-align: center;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.inline-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.inline-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #4a5568;
+}
+
+.helper-text {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #718096;
+}
+
+.battery {
+    position: relative;
+    width: 220px;
+    height: 90px;
+    border-radius: 18px;
+    border: 4px solid #e2e8f0;
+    overflow: hidden;
+    background: #f8fafc;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.battery::after {
+    content: '';
+    position: absolute;
+    right: -16px;
+    top: 28px;
+    width: 12px;
+    height: 34px;
+    border-radius: 8px;
+    background: #e2e8f0;
+}
+
+.battery-fill {
+    height: 100%;
+    transition: width 0.4s ease;
+}
+
+.battery-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
 }
 
 @media (max-width: 600px) {
