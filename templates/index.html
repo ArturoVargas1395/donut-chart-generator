@@ -1,204 +1,321 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Donut Chart Generator</title>
+    <title>Completion Ratio Chart Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Donut Chart Generator</h1>
+        <h1>Completion Ratio Chart Generator</h1>
 
         <div class="chart-container">
-            {% if data.chart_type == "battery" %}
-            <div class="battery">
-                <div class="battery-fill" style="width: {{ data.percentage if data.percentage <= 100 else 100 }}%; background: {{ data.completed_color }};"></div>
-                <div class="battery-text" style="color: {{ data.text_color }}; font-size: {{ data.font_size }}px;">
-                    {{ data.formatted_completion }}
+            <div style="text-align: center; margin-bottom: 20px;">
+                <label for="chart_type_selector" style="font-weight: 600; margin-right: 10px;">Chart Type:</label>
+                <select id="chart_type_selector" style="
+                    padding: 8px 16px;
+                    font-size: 16px;
+                    border-radius: 6px;
+                    border: 2px solid #667eea;
+                    background: white;
+                    cursor: pointer;
+                ">
+                    <option value="donut" {{ 'selected' if data.chart_type=='donut' else '' }}>Donut Chart</option>
+                    <option value="battery" {{ 'selected' if data.chart_type=='battery' else '' }}>Battery Chart</option>
+                </select>
+            </div>
+
+            <!-- Donut Chart -->
+            <div id="donut-container" class="chart-display" style="{{ 'display: block;' if data.chart_type == 'donut' else 'display: none;' }}">
+                <div class="donut-chart" id="donutChart" style="
+                    width: 400px;
+                    height: 400px;
+                    border-radius: 50%;
+                    background: conic-gradient(
+                        {{ data.completed_color }} 0deg {{ data.completed_degrees }}deg,
+                        {{ data.incomplete_color }} {{ data.completed_degrees }}deg 360deg
+                    );
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    position: relative;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    margin: 0 auto;
+                ">
+                    <div class="donut-hole" style="
+                        width: 220px;
+                        height: 220px;
+                        background: white;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        position: absolute;
+                    ">
+                        <div class="donut-text" id="donutText" style="
+                            font-size: {{ data.font_size }}px;
+                            font-weight: 700;
+                            color: {{ data.text_color }};
+                            font-family: 'Inter', sans-serif;
+                        ">
+                            {{ data.formatted_current }}/{{ data.formatted_max }}
+                        </div>
+                    </div>
                 </div>
             </div>
-            {% else %}
-            <svg width="260" height="260" viewBox="0 0 260 260">
-                <circle
-                    cx="130"
-                    cy="130"
-                    r="90"
-                    fill="none"
-                    stroke="{{ data.incomplete_color }}"
-                    stroke-width="18"
-                    opacity="0.2" />
-                <circle
-                    class="progress-ring"
-                    cx="130"
-                    cy="130"
-                    r="90"
-                    fill="none"
-                    stroke="{{ data.completed_color }}"
-                    stroke-width="18"
-                    stroke-linecap="round"
-                    stroke-dasharray="{{ data.completed_length }} {{ data.circumference }}"
-                    transform="rotate(-90 130 130)" />
-                <text
-                    x="50%"
-                    y="50%"
-                    text-anchor="middle"
-                    dominant-baseline="middle"
-                    class="ratio-text"
-                    fill="{{ data.text_color }}"
-                    style="font-size: {{ data.font_size }}px;">
-                    {{ data.formatted_completion }}
-                </text>
-            </svg>
-            {% endif %}
+
+            <!-- Battery Chart -->
+            <div id="battery-container" class="chart-display" style="{{ 'display: block;' if data.chart_type == 'battery' else 'display: none;' }}">
+                <div class="battery-chart" id="batteryChart" style="
+                    width: 400px;
+                    height: 100px;
+                    border-radius: 12px;
+                    background: linear-gradient(
+                        to right,
+                        {{ data.completed_color }} 0%,
+                        {{ data.completed_color }} {{ data.percentage }}%,
+                        {{ data.incomplete_color }} {{ data.percentage }}%,
+                        {{ data.incomplete_color }} 100%
+                    );
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    position: relative;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    margin: 0 auto;
+                    border: 3px solid #333;
+                ">
+                    <div class="battery-text" id="batteryText" style="
+                        font-size: {{ data.font_size }}px;
+                        font-weight: 700;
+                        color: {{ data.text_color }};
+                        font-family: 'Inter', sans-serif;
+                        text-shadow: 0 0 4px rgba(255,255,255,0.8), 0 0 8px rgba(255,255,255,0.6);
+                    ">
+                        {{ data.formatted_current }}/{{ data.formatted_max }}
+                    </div>
+                </div>
+            </div>
 
             <div class="stats">
-                <p><strong>Current:</strong> {{ data.formatted_current }}</p>
-                <p><strong>Max:</strong> {{ data.formatted_max }}</p>
-                <p><strong>Completion:</strong> {{ data.formatted_completion }}</p>
+                <p><strong>Completion:</strong> {{ "%.1f"|format(data.percentage) }}%</p>
+                <p><strong>Completed:</strong> {{ data.formatted_current }}</p>
+                <p><strong>Remaining:</strong> {{ data.formatted_remaining }}</p>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="button" onclick="downloadChart()" style="
+                    padding: 12px 24px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+                ">Download as PNG (Transparent)</button>
             </div>
         </div>
 
-        <form class="controls" method="post" action="{{ url_for('update') }}">
-            <h2>Values</h2>
-            <div class="form-group">
-                <label for="current">Current value</label>
-                <input type="number" step="0.01" id="current" name="current" value="{{ data.current }}">
-            </div>
-            <div class="form-group">
-                <label for="max">Max value</label>
-                <input type="number" step="0.01" id="max" name="max" value="{{ data.max }}">
-            </div>
+        <div class="controls">
+            <h2>Update Values</h2>
+            <form method="POST" action="/update">
+                <input type="hidden" id="chart_type" name="chart_type" value="{{ data.chart_type }}">
 
-            <h2>Colors</h2>
-            <div class="form-group color-row">
-                <label for="completed_color">Completed</label>
-                <div class="color-inline">
-                    <input type="color" id="completed_color_picker" value="{{ data.completed_color }}">
-                    <input class="color-text" type="text" id="completed_color" name="completed_color" value="{{ data.completed_color }}">
+                <div class="form-group">
+                    <label for="current">Current Value (Completed):</label>
+                    <input type="number" id="current" name="current" value="{{ data.current }}" step="0.01" min="0" max="{{ data.max }}" required>
                 </div>
-            </div>
-            <div class="form-group color-row">
-                <label for="incomplete_color">Incomplete</label>
-                <div class="color-inline">
-                    <input type="color" id="incomplete_color_picker" value="{{ data.incomplete_color }}">
-                    <input class="color-text" type="text" id="incomplete_color" name="incomplete_color" value="{{ data.incomplete_color }}">
+
+                <div class="form-group">
+                    <label for="max">Maximum Value:</label>
+                    <input type="number" id="max" name="max" value="{{ data.max }}" step="0.01" min="0.01" required>
                 </div>
-            </div>
-            <div class="form-group color-row">
-                <label for="text_color">Text</label>
-                <div class="color-inline">
-                    <input type="color" id="text_color_picker" value="{{ data.text_color }}">
-                    <input class="color-text" type="text" id="text_color" name="text_color" value="{{ data.text_color }}">
+
+                <div class="form-group">
+                    <label for="completed_color">Completed Color:</label>
+                    <input type="color" id="completed_color" name="completed_color" value="{{ data.completed_color }}">
+                    <input type="text" class="color-text" value="{{ data.completed_color }}" readonly>
                 </div>
-            </div>
 
-            <h2>Chart options</h2>
-            <div class="form-group">
-                <label for="chart_type">Chart type</label>
-                <select id="chart_type" name="chart_type">
-                    <option value="donut" {% if data.chart_type == "donut" %}selected{% endif %}>Donut</option>
-                    <option value="battery" {% if data.chart_type == "battery" %}selected{% endif %}>Battery</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="font_size">Center text size (px)</label>
-                <input type="number" id="font_size" name="font_size" value="{{ data.font_size }}" min="16" max="96">
-            </div>
-
-            <h2>Number format</h2>
-            <div class="form-group">
-                <label for="number_format">Format</label>
-                <select id="number_format" name="number_format">
-                    <option value="general" {% if data.number_format == "general" %}selected{% endif %}>General</option>
-                    <option value="number" {% if data.number_format == "number" %}selected{% endif %}>Number</option>
-                    <option value="percentage" {% if data.number_format == "percentage" %}selected{% endif %}>Percentage</option>
-                    <option value="currency" {% if data.number_format == "currency" %}selected{% endif %}>Currency</option>
-                    <option value="custom" {% if data.number_format == "custom" %}selected{% endif %}>Custom</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Decimal places</label>
-                <div class="decimal-controls">
-                    <input type="hidden" id="decimal_places" name="decimal_places" value="{{ data.decimal_places }}">
-                    <button type="button" class="pill-button" id="decrement-decimals">.0‒</button>
-                    <div class="decimal-display" id="decimal_display">{{ data.decimal_places }}</div>
-                    <button type="button" class="pill-button" id="increment-decimals">+.0</button>
+                <div class="form-group">
+                    <label for="incomplete_color">Incomplete Color (Remaining):</label>
+                    <input type="color" id="incomplete_color" name="incomplete_color" value="{{ data.incomplete_color }}">
+                    <input type="text" class="color-text" value="{{ data.incomplete_color }}" readonly>
                 </div>
-                <p class="helper-text">Clamp between 0 and 4. Affects display only.</p>
-            </div>
 
-            <div class="form-group inline-group">
-                <label class="inline-label">
-                    <input type="checkbox" name="use_thousands" id="use_thousands" {% if data.use_thousands %}checked{% endif %}>
-                    Use thousands separator (,)
-                </label>
-            </div>
+                <div class="form-group">
+                    <label for="text_color">Text Color (Center Numbers):</label>
+                    <input type="color" id="text_color" name="text_color" value="{{ data.text_color }}">
+                    <input type="text" class="color-text" value="{{ data.text_color }}" readonly>
+                </div>
 
-            <div class="form-group" id="currency_row">
-                <label for="currency_symbol">Currency symbol</label>
-                <input type="text" id="currency_symbol" name="currency_symbol" maxlength="3" value="{{ data.currency_symbol }}" placeholder="$">
-                <p class="helper-text">Only used when format = Currency.</p>
-            </div>
+                <div class="form-group">
+                    <label for="font_size">Font Size (px):</label>
+                    <input type="number" id="font_size" name="font_size" value="{{ data.font_size }}" min="10" max="100" step="1" required>
+                </div>
 
-            <button type="submit">Update Chart</button>
-        </form>
+                <div class="form-group">
+                    <label for="decimal_places">Decimal Places (center numbers):</label>
+                    <input type="number" id="decimal_places" name="decimal_places" value="{{ data.decimal_places }}" min="0" max="4" step="1">
+                </div>
+
+                <button type="submit">Update Chart</button>
+            </form>
+        </div>
     </div>
 
     <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const decimalInput = document.getElementById("decimal_places");
-        const decimalDisplay = document.getElementById("decimal_display");
-        const incBtn = document.getElementById("increment-decimals");
-        const decBtn = document.getElementById("decrement-decimals");
-        const formatSelect = document.getElementById("number_format");
-        const currencyRow = document.getElementById("currency_row");
-        const colorPairs = [
-            ["completed_color_picker", "completed_color"],
-            ["incomplete_color_picker", "incomplete_color"],
-            ["text_color_picker", "text_color"],
-        ];
-
-        // Keep color inputs (picker + text) in sync
-        colorPairs.forEach(([pickerId, textId]) => {
-            const picker = document.getElementById(pickerId);
-            const text = document.getElementById(textId);
-            if (!picker || !text) return;
-
-            picker.addEventListener("input", () => {
-                text.value = picker.value;
-            });
-            text.addEventListener("input", () => {
-                if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(text.value.trim())) {
-                    picker.value = text.value.trim();
-                }
-            });
-        });
-
-        const clamp = (val) => Math.min(4, Math.max(0, val));
-        const setDecimals = (val) => {
-            const clamped = clamp(val);
-            decimalInput.value = clamped;
-            decimalDisplay.textContent = clamped;
+        var chartData = {
+            current: parseFloat('{{ data.current }}'),
+            max: parseFloat('{{ data.max }}'),
+            percentage: parseFloat('{{ data.percentage }}'),
+            completedDegrees: parseFloat('{{ data.completed_degrees }}'),
+            completedColor: '{{ data.completed_color }}',
+            incompleteColor: '{{ data.incomplete_color }}',
+            textColor: '{{ data.text_color }}',
+            chartType: '{{ data.chart_type }}',
+            fontSize: parseInt('{{ data.font_size }}'),
+            decimalPlaces: parseInt('{{ data.decimal_places }}')
         };
 
-        incBtn.addEventListener("click", () => {
-            setDecimals(parseInt(decimalInput.value || "0", 10) + 1);
-        });
-        decBtn.addEventListener("click", () => {
-            setDecimals(parseInt(decimalInput.value || "0", 10) - 1);
+        document.getElementById('chart_type_selector').addEventListener('change', function (e) {
+            var selectedType = e.target.value;
+            document.getElementById('chart_type').value = selectedType;
+
+            if (selectedType === 'donut') {
+                document.getElementById('donut-container').style.display = 'block';
+                document.getElementById('battery-container').style.display = 'none';
+            } else {
+                document.getElementById('donut-container').style.display = 'none';
+                document.getElementById('battery-container').style.display = 'block';
+            }
+
+            chartData.chartType = selectedType;
         });
 
-        const toggleCurrency = () => {
-            const isCurrency = formatSelect.value === "currency";
-            currencyRow.style.display = isCurrency ? "block" : "none";
-            const input = currencyRow.querySelector("input");
-            input.disabled = !isCurrency;
-        };
-        formatSelect.addEventListener("change", toggleCurrency);
-        toggleCurrency();
-    });
+        function downloadChart() {
+            if (chartData.chartType === 'donut') {
+                downloadDonutChart();
+            } else {
+                downloadBatteryChart();
+            }
+        }
+
+        function downloadDonutChart() {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            var size = 400;
+            canvas.width = size;
+            canvas.height = size;
+
+            var centerX = size / 2;
+            var centerY = size / 2;
+            var outerRadius = 150;
+            var innerRadius = 110;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, outerRadius, -Math.PI / 2, (-Math.PI / 2) + (chartData.completedDegrees * Math.PI / 180));
+            ctx.arc(centerX, centerY, innerRadius, (-Math.PI / 2) + (chartData.completedDegrees * Math.PI / 180), -Math.PI / 2, true);
+            ctx.closePath();
+            ctx.fillStyle = chartData.completedColor;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, outerRadius, (-Math.PI / 2) + (chartData.completedDegrees * Math.PI / 180), (-Math.PI / 2) + (2 * Math.PI));
+            ctx.arc(centerX, centerY, innerRadius, (-Math.PI / 2) + (2 * Math.PI), (-Math.PI / 2) + (chartData.completedDegrees * Math.PI / 180), true);
+            ctx.closePath();
+            ctx.fillStyle = chartData.incompleteColor;
+            ctx.fill();
+
+            ctx.fillStyle = chartData.textColor;
+            ctx.font = 'bold ' + chartData.fontSize + 'px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            var text = chartData.current.toFixed(chartData.decimalPlaces) + '/' + chartData.max.toFixed(chartData.decimalPlaces);
+            ctx.fillText(text, centerX, centerY);
+
+            canvas.toBlob(function (blob) {
+                var url = URL.createObjectURL(blob);
+                var link = document.createElement('a');
+                link.download = 'donut-chart-' + chartData.current.toFixed(chartData.decimalPlaces) + '-' + chartData.max.toFixed(chartData.decimalPlaces) + '.png';
+                link.href = url;
+                link.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        function downloadBatteryChart() {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            var width = 400;
+            var height = 100;
+            canvas.width = width;
+            canvas.height = height;
+
+            var borderRadius = 12;
+            var borderWidth = 3;
+
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = borderWidth;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(borderWidth / 2, borderWidth / 2, width - borderWidth, height - borderWidth, borderRadius);
+            } else {
+                ctx.rect(borderWidth / 2, borderWidth / 2, width - borderWidth, height - borderWidth);
+            }
+            ctx.stroke();
+
+            var fillWidth = (width - borderWidth * 2) * (chartData.percentage / 100);
+
+            ctx.fillStyle = chartData.completedColor;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(borderWidth, borderWidth, fillWidth, height - borderWidth * 2, borderRadius);
+            } else {
+                ctx.rect(borderWidth, borderWidth, fillWidth, height - borderWidth * 2);
+            }
+            ctx.fill();
+
+            if (chartData.percentage < 100) {
+                ctx.fillStyle = chartData.incompleteColor;
+                ctx.fillRect(borderWidth + fillWidth, borderWidth, width - borderWidth * 2 - fillWidth, height - borderWidth * 2);
+            }
+
+            ctx.fillStyle = chartData.textColor;
+            ctx.font = 'bold ' + chartData.fontSize + 'px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            var text = chartData.current.toFixed(chartData.decimalPlaces) + '/' + chartData.max.toFixed(chartData.decimalPlaces);
+
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+            ctx.shadowBlur = 4;
+            ctx.fillText(text, width / 2, height / 2);
+            ctx.shadowBlur = 0;
+
+            canvas.toBlob(function (blob) {
+                var url = URL.createObjectURL(blob);
+                var link = document.createElement('a');
+                link.download = 'battery-chart-' + chartData.current.toFixed(chartData.decimalPlaces) + '-' + chartData.max.toFixed(chartData.decimalPlaces) + '.png';
+                link.href = url;
+                link.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        document.getElementById('completed_color').addEventListener('input', function (e) {
+            this.nextElementSibling.value = e.target.value.toUpperCase();
+        });
+
+        document.getElementById('incomplete_color').addEventListener('input', function (e) {
+            this.nextElementSibling.value = e.target.value.toUpperCase();
+        });
+
+        document.getElementById('text_color').addEventListener('input', function (e) {
+            this.nextElementSibling.value = e.target.value.toUpperCase();
+        });
     </script>
 </body>
 </html>
